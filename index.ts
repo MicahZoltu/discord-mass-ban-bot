@@ -107,11 +107,7 @@ client.on("message", async maybeCommand => {
 					console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
 					await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
 				}
-			} finally {
-				await confirmationMessage.delete()
 			}
-		} finally {
-			await maybeCommand.delete()
 		}
 	} catch (error: unknown) {
 		console.error(error)
