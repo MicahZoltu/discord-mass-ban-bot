@@ -72,42 +72,38 @@ client.on("message", async maybeCommand => {
 		const regex = maybeCommand.content.match(/^ban (\d+?) (\d+?)$/i)
 		if (regex === null) return
 
-		try {
-			const joinLogChannel = getChannel(commandServer.id, joinLogChannelId)
-			const toBan: Discord.Message[] = []
-			let currentMessageId = BigInt(regex[1]) > BigInt(regex[2]) ? BigInt(regex[1]) : BigInt(regex[2])
-			const lastMessageId = BigInt(regex[1]) < BigInt(regex[2]) ? BigInt(regex[1]) : BigInt(regex[2])
-			console.log(`Banning everyone from message ID ${lastMessageId} to ${currentMessageId}`)
-			let doneCollecting = false;
-			while (!doneCollecting) {
-				const messages = await joinLogChannel.messages.fetch({ limit: 50, before: (currentMessageId + 1n).toString(10) })
-				messages.forEach(message => {
-					const messageId = BigInt(message.id)
-					if (message.type !== 'GUILD_MEMBER_JOIN') return
-					if (messageId < lastMessageId) return (doneCollecting = true)
-					toBan.push(message)
-					currentMessageId = BigInt(message.id)
-				});
-			}
+		const joinLogChannel = getChannel(commandServer.id, joinLogChannelId)
+		const toBan: Discord.Message[] = []
+		let currentMessageId = BigInt(regex[1]) > BigInt(regex[2]) ? BigInt(regex[1]) : BigInt(regex[2])
+		const lastMessageId = BigInt(regex[1]) < BigInt(regex[2]) ? BigInt(regex[1]) : BigInt(regex[2])
+		console.log(`Banning everyone from message ID ${lastMessageId} to ${currentMessageId}`)
+		let doneCollecting = false;
+		while (!doneCollecting) {
+			const messages = await joinLogChannel.messages.fetch({ limit: 50, before: (currentMessageId + 1n).toString(10) })
+			messages.forEach(message => {
+				const messageId = BigInt(message.id)
+				if (message.type !== 'GUILD_MEMBER_JOIN') return
+				if (messageId < lastMessageId) return (doneCollecting = true)
+				toBan.push(message)
+				currentMessageId = BigInt(message.id)
+			});
+		}
 
-			console.log('The people to ban...!')
-			console.log(toBan.map(message => message.author.username));
+		console.log('The people to ban...!')
+		console.log(toBan.map(message => message.author.username));
 
-			const firstBannedMessage = toBan[toBan.length - 1]
-			const lastBannedMessage = toBan[0]
-			const confirmationMessage = await maybeCommand.channel.send({ content: `Are you sure? You are going to ban ${toBan.length} users who joined from ${firstBannedMessage.author.username}#${firstBannedMessage.author.discriminator} (\`${firstBannedMessage.createdAt.toUTCString()}\`) ${lastBannedMessage.author.username}#${lastBannedMessage.author.discriminator} to (\`${lastBannedMessage.createdAt.toUTCString()}\`)` })
-			const allReactions = await confirmationMessage.awaitReactions(reaction => ["👍"].includes(reaction.emoji.name), { max: 1, time: 60000, errors: ["time"] })
-			const reaction = allReactions.first();
-			console.log('reaction parsed')
-			console.log(reaction)
+		const firstBannedMessage = toBan[toBan.length - 1]
+		const lastBannedMessage = toBan[0]
+		const confirmationMessage = await maybeCommand.channel.send({ content: `Are you sure? You are going to ban ${toBan.length} users who joined from ${firstBannedMessage.author.username}#${firstBannedMessage.author.discriminator} (\`${firstBannedMessage.createdAt.toUTCString()}\`) ${lastBannedMessage.author.username}#${lastBannedMessage.author.discriminator} to (\`${lastBannedMessage.createdAt.toUTCString()}\`)` })
+		const allReactions = await confirmationMessage.awaitReactions(reaction => ["👍"].includes(reaction.emoji.name), { max: 1, time: 60000, errors: ["time"] })
+		const reaction = allReactions.first();
+		console.log('reaction parsed')
+		console.log(reaction)
 
-			try {
-				if (!reaction || reaction.emoji.name !== "👍") return
-				for (const userMessage of toBan) {
-					console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
-					await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
-				}
-			}
+		if (!reaction || reaction.emoji.name !== "👍") return
+		for (const userMessage of toBan) {
+			console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
+			await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
 		}
 	} catch (error: unknown) {
 		console.error(error)
