@@ -94,13 +94,23 @@ client.on("message", async maybeCommand => {
 
 		const firstBannedMessage = toBan[toBan.length - 1]
 		const lastBannedMessage = toBan[0]
+		const banTimeRange = Math.abs(lastBannedMessage.createdAt.getTime() - firstBannedMessage.createdAt.getTime())
+		if (banTimeRange > 5 * 60 * 1000) {
+			await maybeCommand.channel.send({ content: `You can only ban over a a 5 minute range, and the two selected messages span a ${banTimeRange / 1000 / 60} minute range.` })
+			return
+		}
 		const confirmationMessage = await maybeCommand.channel.send({ content: `Are you sure? You are going to ban ${toBan.length} users who joined from ${firstBannedMessage.author.username}#${firstBannedMessage.author.discriminator} (\`${firstBannedMessage.createdAt.toUTCString()}\`) ${lastBannedMessage.author.username}#${lastBannedMessage.author.discriminator} to (\`${lastBannedMessage.createdAt.toUTCString()}\`)` })
 		const allReactions = await confirmationMessage.awaitReactions(reaction => ["👍"].includes(reaction.emoji.name), { max: 1, time: 60000, errors: ["time"] })
 		const reaction = allReactions.first();
 		console.log('reaction parsed')
 		console.log(reaction)
 
-		if (!reaction || reaction.emoji.name !== "👍") return
+		if (!reaction) {
+			await maybeCommand.channel.send({ content: `No 👍 reaction received after 1 minute, ban cancelled.` })
+			return
+		}
+
+		if (reaction.emoji.name !== "👍") return
 		for (const userMessage of toBan) {
 			console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
 			await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })

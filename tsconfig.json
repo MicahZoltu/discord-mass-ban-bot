@@ -4,5 +4,11 @@
 		"module": "CommonJS",
 		"strict": true,
 		"noEmit": true,
+		"alwaysStrict": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noEmitOnError": true,
+		"noImplicitThis": true,
+		"noImplicitAny": true,
 	}
 }
