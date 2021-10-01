@@ -108,10 +108,14 @@ client.on("message", async maybeCommand => {
 		if (!reaction || reaction.emoji.name !== "👍") return
 		for (const userMessage of toBan) {
 			console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
-			await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
+			try {
+				await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
+			} catch (error: unknown) {
+				console.log(`Failed to ban ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id}): ${error.message}`)
+			}
 		}
 	} catch (error: unknown) {
-		await maybeCommand.channel.send({ content: `No 👍 reaction received after 1 minute, ban cancelled (or possibly some other error, Discord doesn't have good error reporting).` })
+		await maybeCommand.channel.send({ content: `No 👍 reaction received after 1 minute, ban cancelled (or possibly some other error, Discord doesn't have good error reporting).  ${error.message}` })
 		console.error(error)
 	}
 })
