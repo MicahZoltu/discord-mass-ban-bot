@@ -103,19 +103,21 @@ client.on("message", async maybeCommand => {
 		const allReactions = await confirmationMessage.awaitReactions(reaction => ["👍"].includes(reaction.emoji.name), { max: 1, time: 60000, errors: ["time"] })
 		const reaction = allReactions.first();
 		console.log('reaction parsed')
-		console.log(reaction)
+		if (!reaction) return
 
+		console.log(reaction.emoji.name)
 		if (!reaction || reaction.emoji.name !== "👍") return
+
 		for (const userMessage of toBan) {
 			console.log(`Banning: ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id})`)
 			try {
 				await commandServer.members.ban(userMessage.author.id, { days: 7, reason: "Join raid." })
 			} catch (error: unknown) {
-				console.log(`Failed to ban ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id}): ${error.message}`)
+				console.log(`Failed to ban ${userMessage.author.username}#${userMessage.author.discriminator} (${userMessage.author.id}): ${error instanceof Error ? error.message : error}`)
 			}
 		}
 	} catch (error: unknown) {
-		await maybeCommand.channel.send({ content: `No 👍 reaction received after 1 minute, ban cancelled (or possibly some other error, Discord doesn't have good error reporting).  ${error.message}` })
+		await maybeCommand.channel.send({ content: `No 👍 reaction received after 1 minute, ban cancelled (or possibly some other error, Discord doesn't have good error reporting).  ${error instanceof Error ? error.message : error}` })
 		console.error(error)
 	}
 })
